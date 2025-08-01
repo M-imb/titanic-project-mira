@@ -89,14 +89,12 @@ age_input_sb = st.sidebar.slider("Возраст", int(df['Age'].min()), int(df[
 fare_input_sb = st.sidebar.slider("Стоимость билета", float(df['Fare'].min()), float(df['Fare'].max()), float(df['Fare'].median()), key='sb_fare_simple')
 embarked_input_sb = st.sidebar.selectbox("Порт посадки", df['Embarked'].unique(), key='sb_embarked_simple')
 
-# Для простоты, SibSp и Parch будут по умолчанию 0 в этом упрощенном варианте
-# Если модель требует их, они будут добавлены в DataFrame с нулевыми значениями
 user_input_sb = pd.DataFrame([{
     'Pclass': pclass_input_sb,
     'Sex': sex_input_sb,
     'Age': age_input_sb,
-    'SibSp': 0,  # Упрощение: задаем 0 по умолчанию
-    'Parch': 0,  # Упрощение: задаем 0 по умолчанию
+    'SibSp': 0,  
+    'Parch': 0,  
     'Fare': fare_input_sb,
     'Embarked': embarked_input_sb
 }])
@@ -237,19 +235,15 @@ with tab3:
             age_input = st.slider("Возраст", 0, 100, 30, key='age_simple')
             fare_input = st.slider("Стоимость билета", 0.0, float(df['Fare'].max()), 32.0, key='fare_simple')
 
-        # Убрали SibSp, Parch, Embarked и Title из прямого ввода пользователя
-        # Эти значения будут заданы по умолчанию в DataFrame для предсказания
-
         if st.button("Получить прогноз", use_container_width=True, type="primary"):
-            # Создаем DataFrame с упрощенным вводом
             user_input = pd.DataFrame([{
                 'Pclass': pclass_input,
                 'Sex': sex_input,
                 'Age': age_input,
-                'SibSp': 0,  # Значение по умолчанию
-                'Parch': 0,  # Значение по умолчанию
+                'SibSp': 0,
+                'Parch': 0,
                 'Fare': fare_input,
-                'Embarked': 'S' # Значение по умолчанию (самый частый порт)
+                'Embarked': 'S'
             }])
 
             user_encoded = encoder_to_predict.transform(user_input)
@@ -262,10 +256,11 @@ with tab3:
             with result_col1:
                 if prediction == 1:
                     st.metric(label="Прогноз", value="Выжил", delta="Высокие шансы")
-                    st.image("https://em-content.zobj.net/source/microsoft-teams/363/lifebuoy_1f6df.png", width=150)
+                    # ИСПРАВЛЕНИЕ: Используем эмодзи вместо st.image
+                    st.write("🌊") # Вы можете выбрать другой эмодзи, например: ⚓️, ⬆️, 🏆, ✨
                 else:
                     st.metric(label="Прогноз", value="Не выжил", delta="Низкие шансы", delta_color="inverse")
-                    st.image("https://em-content.zobj.net/source/microsoft-teams/363/skull-and-crossbones_2620-fe0f.png", width=150)
+                    st.write("💀") # Оставляем эмодзи черепа
 
             with result_col2:
                 fig_gauge = go.Figure(go.Indicator(
@@ -279,6 +274,65 @@ with tab3:
                                  {'range': [50, 100], 'color': "#D6EAF8"}],
                              }))
                 st.plotly_chart(fig_gauge, use_container_width=True)
+
+# # --- ВКЛАДКА 3: СДЕЛАТЬ ПРОГНОЗ (УПРОЩЕН) ---
+# with tab3:
+#     st.header("Прогноз выживаемости пассажира")
+#     if 'model' not in st.session_state or 'encoder' not in st.session_state:
+#         st.warning("Сначала обучите модель на вкладке 'Обучение и настройка моделей'!")
+#     else:
+#         model_to_predict = st.session_state['model']
+#         encoder_to_predict = st.session_state['encoder']
+#         X_train_cols = st.session_state['X_train_encoded_columns']
+
+#         st.info("Введите параметры пассажира, чтобы получить прогноз.")
+#         col1, col2 = st.columns(2)
+#         with col1:
+#             pclass_input = st.selectbox("Класс билета", sorted(df['Pclass'].unique()), key='pclass_simple')
+#             sex_input = st.selectbox("Пол", df['Sex'].unique(), key='sex_simple')
+#             age_input = st.slider("Возраст", 0, 100, 30, key='age_simple')
+#             fare_input = st.slider("Стоимость билета", 0.0, float(df['Fare'].max()), 32.0, key='fare_simple')
+
+
+#         if st.button("Получить прогноз", use_container_width=True, type="primary"):
+
+#             user_input = pd.DataFrame([{
+#                 'Pclass': pclass_input,
+#                 'Sex': sex_input,
+#                 'Age': age_input,
+#                 'SibSp': 0, 
+#                 'Parch': 0,  
+#                 'Fare': fare_input,
+#                 'Embarked': 'S' 
+#             }])
+
+#             user_encoded = encoder_to_predict.transform(user_input)
+#             user_encoded = user_encoded[X_train_cols]
+
+#             prediction = model_to_predict.predict(user_encoded)[0]
+#             probability = model_to_predict.predict_proba(user_encoded)[0]
+
+#             result_col1, result_col2 = st.columns([1, 2])
+#             with result_col1:
+#                 if prediction == 1:
+#                     st.metric(label="Прогноз", value="Выжил", delta="Высокие шансы")
+#                     st.image("https://em-content.zobj.net/source/microsoft-teams/363/lifebuoy_1f6df.png", width=150)
+#                 else:
+#                     st.metric(label="Прогноз", value="Не выжил", delta="Низкие шансы", delta_color="inverse")
+#                     st.image("https://em-content.zobj.net/source/microsoft-teams/363/skull-and-crossbones_2620-fe0f.png", width=150)
+
+#             with result_col2:
+#                 fig_gauge = go.Figure(go.Indicator(
+#                     mode = "gauge+number",
+#                     value = probability[1] * 100,
+#                     title = {'text': "Вероятность выжить (%)"},
+#                     gauge = {'axis': {'range': [None, 100]},
+#                              'bar': {'color': "#636EFA"},
+#                              'steps' : [
+#                                  {'range': [0, 50], 'color': "#F0F2F6"},
+#                                  {'range': [50, 100], 'color': "#D6EAF8"}],
+#                              }))
+#                 st.plotly_chart(fig_gauge, use_container_width=True)
                 
 
 # import streamlit as st
