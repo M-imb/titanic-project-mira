@@ -26,7 +26,6 @@ df['Embarked'].fillna(df['Embarked'].mode()[0], inplace=True)
 # Преобразуем 'Survived' в более понятные метки для графиков
 df['SurvivalStatus'] = df['Survived'].map({0: 'Не выжил', 1: 'Выжил'})
 
----
 ## Генерация новых признаков (Feature Engineering)
 # Эти строки ДОЛЖНЫ БЫТЬ ДО использования FamilySize, IsAlone, Title
 df['FamilySize'] = df['SibSp'] + df['Parch'] + 1
