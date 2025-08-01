@@ -34,7 +34,7 @@ df['Title'] = df['Name'].apply(lambda x: x.split(',')[1].split('.')[0].strip())
 # Объединение редких титулов для упрощения
 rare_titles = df['Title'].value_counts() < 10
 df['Title'] = df['Title'].apply(lambda x: 'Rare' if rare_titles[x] else x)
----
+
 
 st.subheader("🔍 Случайные 10 строк")
 st.dataframe(df.sample(10), use_container_width=True)
