@@ -270,7 +270,7 @@ with tab3:
         if st.button("Получить прогноз", use_container_width=True, type="primary"):
             # Вычисляем FamilySize и IsAlone для пользовательского ввода
             family_size = sibsp_input + parch_input + 1
-            is_alone = (family_size == 1).astype(int)
+            is_alone = int(family_size == 1) # Преобразуем True/False напрямую в 1/0
 
             user_input = pd.DataFrame([{
                 'Pclass': pclass_input,
