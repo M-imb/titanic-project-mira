@@ -8,7 +8,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
 import category_encoders as ce
 import plotly.express as px
-import plotly.graph_objects as go # Все еще нужен для Gauge chart
+import plotly.graph_objects as go
 
 # --- Конфигурация страницы Streamlit ---
 st.set_page_config(page_title="🚢 Прогноз выживания на Титанике (Упрощенная)", layout="wide")
@@ -22,8 +22,6 @@ df['Age'].fillna(df['Age'].median(), inplace=True)
 df['Embarked'].fillna(df['Embarked'].mode()[0], inplace=True)
 df['SurvivalStatus'] = df['Survived'].map({0: 'Не выжил', 1: 'Выжил'})
 
-# *** УДАЛЕНЫ FamilySize, IsAlone, Title и их генерация ***
-
 st.subheader("🔍 Случайные 10 строк")
 st.dataframe(df.sample(10), use_container_width=True)
 
@@ -31,30 +29,32 @@ st.subheader("📊 Визуализация данных")
 col1, col2 = st.columns(2)
 
 with col1:
-    # Распределение выживших по классу билета
     fig1 = px.histogram(df, x="Pclass", color="SurvivalStatus", barmode="group",
                         title="Распределение выживших по классу билета",
                         labels={'Pclass': 'Класс билета', 'SurvivalStatus': 'Статус выживания'})
     st.plotly_chart(fig1, use_container_width=True)
 
 with col2:
-    # Зависимость выживаемости от пола
     fig2 = px.histogram(df, x="Sex", color="SurvivalStatus", barmode="group",
                         title="Распределение выживших по полу",
                         labels={'Sex': 'Пол', 'SurvivalStatus': 'Статус выживания'})
     st.plotly_chart(fig2, use_container_width=True)
 
-# *** УДАЛЕНЫ Violin Plot и Sunburst Chart для упрощения ***
+st.subheader("📈 Распределение по возрасту")
+fig_age = px.histogram(df, x="Age", color="SurvivalStatus", barmode="overlay",
+                       title="Распределение выживших по возрасту",
+                       labels={'SurvivalStatus': 'Статус выживания'},
+                       color_discrete_map={'Не выжил': '#EF553B', 'Выжил': '#636EFA'})
+st.plotly_chart(fig_age, use_container_width=True)
+
 
 # --- Подготовка данных для обучения (для верхней секции "Сравнение моделей по точности") ---
-# Используем только базовые признаки
 features_for_initial_comparison = ['Pclass', 'Sex', 'Age', 'SibSp', 'Parch', 'Fare', 'Embarked']
 X_initial_comparison = df[features_for_initial_comparison]
 y_initial_comparison = df['Survived']
 
 X_train_initial_comparison, X_test_initial_comparison, y_train_initial_comparison, y_test_initial_comparison = train_test_split(X_initial_comparison, y_initial_comparison, test_size=0.3, random_state=42, stratify=y_initial_comparison)
 
-# --- Кодирование категориальных признаков для верхней секции ---
 encoder_initial_comparison = ce.TargetEncoder(cols=['Sex', 'Embarked'])
 X_train_encoded_initial_comparison = encoder_initial_comparison.fit_transform(X_train_initial_comparison, y_train_initial_comparison)
 X_test_encoded_initial_comparison = encoder_initial_comparison.transform(X_test_initial_comparison)
@@ -82,21 +82,18 @@ st.table(pd.DataFrame(results))
 # --- Интерфейс для предсказания в боковой панели (УПРОЩЕН) ---
 st.sidebar.header("🔮 Предсказание по параметрам")
 
-# Оставили только самые важные параметры
 pclass_input_sb = st.sidebar.selectbox("Класс билета", sorted(df['Pclass'].unique()), key='sb_pclass_simple')
 sex_input_sb = st.sidebar.selectbox("Пол", df['Sex'].unique(), key='sb_sex_simple')
 age_input_sb = st.sidebar.slider("Возраст", int(df['Age'].min()), int(df['Age'].max()), int(df['Age'].mean()), key='sb_age_simple')
 fare_input_sb = st.sidebar.slider("Стоимость билета", float(df['Fare'].min()), float(df['Fare'].max()), float(df['Fare'].median()), key='sb_fare_simple')
 embarked_input_sb = st.sidebar.selectbox("Порт посадки", df['Embarked'].unique(), key='sb_embarked_simple')
 
-# Для простоты, SibSp и Parch будут по умолчанию 0 в этом упрощенном варианте
-# Если модель требует их, они будут добавлены в DataFrame с нулевыми значениями
 user_input_sb = pd.DataFrame([{
     'Pclass': pclass_input_sb,
     'Sex': sex_input_sb,
     'Age': age_input_sb,
-    'SibSp': 0,  # Упрощение: задаем 0 по умолчанию
-    'Parch': 0,  # Упрощение: задаем 0 по умолчанию
+    'SibSp': 0,
+    'Parch': 0,
     'Fare': fare_input_sb,
     'Embarked': embarked_input_sb
 }])
@@ -117,8 +114,6 @@ for name, model in models.items():
     })
     st.sidebar.dataframe(proba_df.set_index("Статус"), use_container_width=True)
 
-# *** УДАЛЕНЫ CSS стили для вкладок ***
-
 # --- Создание вкладок ---
 tab1, tab2, tab3 = st.tabs(["📊 Анализ данных", "🤖 Обучение и настройка моделей", "🔮 Сделать прогноз"])
 
@@ -131,7 +126,6 @@ with tab1:
     st.write("### 📈 Интерактивные графики")
     col1, col2 = st.columns(2)
     with col1:
-        # Просто показываем гистограмму по Pclass без выбора признака
         fig_pclass = px.histogram(df, x="Pclass", color="SurvivalStatus", barmode="group",
                             title="Распределение выживших по классу билета",
                             labels={'SurvivalStatus': 'Статус выживания'},
@@ -139,7 +133,6 @@ with tab1:
         st.plotly_chart(fig_pclass, use_container_width=True)
 
     with col2:
-        # Просто показываем гистограмму по Sex
         fig_sex = px.histogram(df, x="Sex", color="SurvivalStatus", barmode="group",
                             title="Распределение выживших по полу",
                             labels={'SurvivalStatus': 'Статус выживания'},
@@ -154,14 +147,12 @@ with tab1:
     st.plotly_chart(fig_age, use_container_width=True)
 
 # --- Подготовка данных для моделей (для вкладок 2 и 3 - УПРОЩЕН) ---
-# Исключаем FamilySize, IsAlone, Title
 features = ['Pclass', 'Sex', 'Age', 'SibSp', 'Parch', 'Fare', 'Embarked']
 X = df[features]
 y = df['Survived']
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42, stratify=y)
 
-# Encoder теперь кодирует только 'Sex' и 'Embarked'
 encoder = ce.TargetEncoder(cols=['Sex', 'Embarked'])
 X_train_encoded = encoder.fit_transform(X_train, y_train)
 X_test_encoded = encoder.transform(X_test)
@@ -237,19 +228,15 @@ with tab3:
             age_input = st.slider("Возраст", 0, 100, 30, key='age_simple')
             fare_input = st.slider("Стоимость билета", 0.0, float(df['Fare'].max()), 32.0, key='fare_simple')
 
-        # Убрали SibSp, Parch, Embarked и Title из прямого ввода пользователя
-        # Эти значения будут заданы по умолчанию в DataFrame для предсказания
-
         if st.button("Получить прогноз", use_container_width=True, type="primary"):
-            # Создаем DataFrame с упрощенным вводом
             user_input = pd.DataFrame([{
                 'Pclass': pclass_input,
                 'Sex': sex_input,
                 'Age': age_input,
-                'SibSp': 0,  # Значение по умолчанию
-                'Parch': 0,  # Значение по умолчанию
+                'SibSp': 0,
+                'Parch': 0,
                 'Fare': fare_input,
-                'Embarked': 'S' # Значение по умолчанию (самый частый порт)
+                'Embarked': 'S'
             }])
 
             user_encoded = encoder_to_predict.transform(user_input)
@@ -262,11 +249,11 @@ with tab3:
             with result_col1:
                 if prediction == 1:
                     st.metric(label="Прогноз", value="Выжил", delta="Высокие шансы")
-                    st.image("https://em-content.zobj.net/source/microsoft-teams/363/lifebuoy_1f6df.png", width=150) 
+                    st.image("https://em-content.zobj.net/source/microsoft-teams/363/lifebuoy_1f6df.png", width=150)
                 else:
                     st.metric(label="Прогноз", value="Не выжил", delta="Низкие шансы", delta_color="inverse")
                     st.image("https://em-content.zobj.net/source/microsoft-teams/363/skull-and-crossbones_2620-fe0f.png", width=150)
-                    
+
             with result_col2:
                 fig_gauge = go.Figure(go.Indicator(
                     mode = "gauge+number",
