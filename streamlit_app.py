@@ -163,7 +163,7 @@ with tab1:
 
     st.write("### ☀️ Иерархия выживания")
     # Sunburst chart
-    fig3 = px.sunburst(df, path=['Pclass', 'Sex', 'SurvivalStatus'], values='FamilySize',
+    fig3 = px.sunburst(df, path=['Pclass', 'Sex', 'SurvivalStatus'],
                        title="Иерархическое распределение выживших по классу и полу",
                        color_discrete_map={'(?)':'gold', 'Не выжил': '#EF553B', 'Выжил': '#636EFA'})
     st.plotly_chart(fig3, use_container_width=True)
