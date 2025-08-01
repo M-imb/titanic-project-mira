@@ -127,9 +127,6 @@ for name, model in models.items():
     st.sidebar.dataframe(proba_df.set_index("Статус"), use_container_width=True)
 
 
-
-
-
 # --- Создание вкладок ---
 tab1, tab2, tab3 = st.tabs(["📊 Анализ данных", "🤖 Обучение и настройка моделей", "🔮 Сделать прогноз"])
 
@@ -164,9 +161,11 @@ with tab1:
     st.write("### ☀️ Иерархия выживания")
     # Sunburst chart
 
-fig3 = px.sunburst(df, path=['Pclass', 'Sex', 'SurvivalStatus'],
-                       title="Иерархическое распределение выживших по классу и полу",
-                       color_discrete_map={'(?)':'gold', 'Не выжил': '#EF553B', 'Выжил': '#636EFA'})
+    # Sunburst chart
+
+    fig3 = px.sunburst(df, path=['Pclass', 'Sex', 'SurvivalStatus'],
+                           title="Иерархическое распределение выживших по классу и полу",
+                           color_discrete_map={'(?)':'gold', 'Не выжил': '#EF553B', 'Выжил': '#636EFA'})
     st.plotly_chart(fig3, use_container_width=True)
 
 
@@ -227,6 +226,72 @@ with tab2:
                            color_continuous_scale='Blues',
                            title="Матрица ошибок")
         st.plotly_chart(fig_cm, use_container_width=True)
+
+        # Сохраняем модель в сессии для использования на другой вкладке
+
+# fig3 = px.sunburst(df, path=['Pclass', 'Sex', 'SurvivalStatus'],
+#                        title="Иерархическое распределение выживших по классу и полу",
+#                        color_discrete_map={'(?)':'gold', 'Не выжил': '#EF553B', 'Выжил': '#636EFA'})
+#     st.plotly_chart(fig3, use_container_width=True)
+
+
+# # --- Подготовка данных для моделей ---
+# features = ['Pclass', 'Sex', 'Age', 'SibSp', 'Parch', 'Fare', 'Embarked', 'FamilySize', 'IsAlone', 'Title']
+# X = df[features]
+# y = df['Survived']
+
+# X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42, stratify=y)
+
+# encoder = ce.TargetEncoder(cols=['Sex', 'Embarked', 'Title', 'IsAlone'])
+# X_train_encoded = encoder.fit_transform(X_train, y_train)
+# X_test_encoded = encoder.transform(X_test)
+
+
+# # --- ВКЛАДКА 2: ОБУЧЕНИЕ И НАСТРОЙКА МОДЕЛЕЙ ---
+# with tab2:
+#     st.header("Выбор и настройка модели машинного обучения")
+#     model_choice = st.selectbox(
+#         "Выберите модель для обучения:",
+#         ("Decision Tree", "K-Nearest Neighbors", "Logistic Regression", "Random Forest")
+#     )
+
+#     params = {}
+#     if model_choice == "Decision Tree":
+#         params['max_depth'] = st.slider("Максимальная глубина дерева (max_depth)", 2, 20, 5, 1)
+#         params['min_samples_leaf'] = st.slider("Мин. число объектов в листе (min_samples_leaf)", 1, 50, 5, 1)
+#         model = DecisionTreeClassifier(random_state=42, **params)
+#     elif model_choice == "K-Nearest Neighbors":
+#         params['n_neighbors'] = st.slider("Число соседей (n_neighbors)", 1, 20, 5, 1)
+#         model = KNeighborsClassifier(**params)
+#     elif model_choice == "Logistic Regression":
+#         params['C'] = st.slider("Сила регуляризации (C)", 0.01, 10.0, 1.0, 0.01)
+#         model = LogisticRegression(random_state=42, max_iter=1000, **params)
+#     elif model_choice == "Random Forest":
+#         params['n_estimators'] = st.slider("Количество деревьев (n_estimators)", 50, 500, 100, 10)
+#         params['max_depth'] = st.slider("Максимальная глубина дерева (max_depth)", 2, 20, 7, 1)
+#         model = RandomForestClassifier(random_state=42, **params)
+
+#     if st.button("🚀 Обучить и оценить модель", use_container_width=True):
+#         # Обучение
+#         model.fit(X_train_encoded, y_train)
+#         y_pred_train = model.predict(X_train_encoded)
+#         y_pred_test = model.predict(X_test_encoded)
+#         acc_train = accuracy_score(y_train, y_pred_train)
+#         acc_test = accuracy_score(y_test, y_pred_test)
+
+#         st.write("### Результаты оценки:")
+#         col1, col2 = st.columns(2)
+#         col1.metric("Точность на обучающей выборке", f"{acc_train:.2%}")
+#         col2.metric("Точность на тестовой выборке", f"{acc_test:.2%}")
+
+#         # Матрица ошибок
+#         cm = confusion_matrix(y_test, y_pred_test)
+#         fig_cm = px.imshow(cm, text_auto=True, aspect="auto",
+#                            labels=dict(x="Предсказанный класс", y="Истинный класс", color="Количество"),
+#                            x=['Не выжил', 'Выжил'], y=['Не выжил', 'Выжил'],
+#                            color_continuous_scale='Blues',
+#                            title="Матрица ошибок")
+#         st.plotly_chart(fig_cm, use_container_width=True)
 
         # Сохраняем модель в сессии для использования на другой вкладке
         st.session_state['model'] = model
