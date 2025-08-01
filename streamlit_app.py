@@ -12,7 +12,7 @@ import plotly.graph_objects as go # Все еще нужен для Gauge chart
 
 # --- Конфигурация страницы Streamlit ---
 st.set_page_config(page_title="🚢 Прогноз выживания на Титанике (Упрощенная)", layout="wide")
-st.title('🚢 Прогноз выживания на Титанике - Упрощенная версия')
+st.title('🚢 Прогноз выживания на Титанике ')
 st.write('## Работа с датасетом Титаника')
 
 df = pd.read_csv("https://raw.githubusercontent.com/datasciencedojo/datasets/master/titanic.csv")
