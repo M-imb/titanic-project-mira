@@ -258,10 +258,10 @@ with tab3:
             prediction = model_to_predict.predict(user_encoded)[0]
             probability = model_to_predict.predict_proba(user_encoded)[0]
 
+            result_col1, result_col2 = st.columns([1, 2])
             with result_col1:
                 if prediction == 1:
                     st.metric(label="Прогноз", value="Выжил", delta="Высокие шансы")
-                    # ИСПРАВЛЕНИЕ: Новая ссылка на изображение
                     st.image("https://em-content.zobj.net/source/microsoft-teams/363/lifebuoy_1f6df.png", width=150) 
                 else:
                     st.metric(label="Прогноз", value="Не выжил", delta="Низкие шансы", delta_color="inverse")
