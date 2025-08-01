@@ -127,70 +127,178 @@ for name, model in models.items():
     st.sidebar.dataframe(proba_df.set_index("Статус"), use_container_width=True)
 
 
-# st.subheader("🔍 Случайные 10 строк")
-# st.dataframe(df.sample(10), use_container_width=True)
 
-# st.subheader("📊 Визуализация данных")
-# col1, col2 = st.columns(2)
 
-# @st.cache_data
-# def load_and_preprocess_data():
-#     df = pd.read_csv("titanic.csv")
-    
-#     # Предобработка данных
-#     df.drop(['Name', 'Ticket', 'Cabin', 'PassengerId'], axis=1, inplace=True)
-#     df['Age'].fillna(df['Age'].median(), inplace=True)
-#     df['Embarked'].fillna(df['Embarked'].mode()[0], inplace=True)
-    
-#     return df
 
-# df = load_and_preprocess_data()
+# --- Создание вкладок ---
+tab1, tab2, tab3 = st.tabs(["📊 Анализ данных", "🤖 Обучение и настройка моделей", "🔮 Сделать прогноз"])
 
-# st.subheader("🔍 Случайные 10 строк")
-# st.dataframe(df.sample(10), use_container_width=True)
+# --- ВКЛАДКА 1: АНАЛИЗ ДАННЫХ ---
+with tab1:
+    st.header("Обзор и визуализация данных")
+    st.write("### 📋 Данные о пассажирах")
+    st.dataframe(df.head(10), use_container_width=True)
 
-# st.subheader("📊 Визуализация данных")
-# col1, col2 = st.columns(2)
+    st.write("### 📈 Интерактивные графики")
+    col1, col2 = st.columns(2)
+    with col1:
+        # Выбор признака для анализа
+        feature_to_plot = st.selectbox(
+            "Выберите признак для анализа распределения выживших:",
+            ('Pclass', 'Sex', 'Embarked', 'FamilySize', 'Title')
+        )
+        fig1 = px.histogram(df, x=feature_to_plot, color="SurvivalStatus", barmode="group",
+                            title=f"Распределение выживших по признаку '{feature_to_plot}'",
+                            labels={'SurvivalStatus': 'Статус выживания'},
+                            color_discrete_map={'Не выжил': '#EF553B', 'Выжил': '#636EFA'})
+        st.plotly_chart(fig1, use_container_width=True)
 
-# with col1:
-#     fig1 = px.histogram(df, x="Survived", color="Sex", barmode="group",
-#                         title="Выживание по полу")
-#     st.plotly_chart(fig1, use_container_width=True)
+    with col2:
+        # Violin plot для анализа возраста
+        fig2 = px.violin(df, x="Sex", y="Age", color="SurvivalStatus", box=True, points="all",
+                         title="Распределение возраста по полу и статусу выживания",
+                         labels={'Sex': 'Пол', 'Age': 'Возраст', 'SurvivalStatus': 'Статус выживания'},
+                         color_discrete_map={'Не выжил': '#EF553B', 'Выжил': '#636EFA'})
+        st.plotly_chart(fig2, use_container_width=True)
 
-# with col2:
-#     fig2 = px.histogram(df, x="Age", color="Survived", marginal="rug",
-#                         title="Распределение возраста по выживанию")
-#     st.plotly_chart(fig2, use_container_width=True)
+    st.write("### ☀️ Иерархия выживания")
+    # Sunburst chart
+    fig3 = px.sunburst(df, path=['Pclass', 'Sex', 'SurvivalStatus'], values='FamilySize',
+                       title="Иерархическое распределение выживших по классу и полу",
+                       color_discrete_map={'(?)':'gold', 'Не выжил': '#EF553B', 'Выжил': '#636EFA'})
+    st.plotly_chart(fig3, use_container_width=True)
 
-# # ОПРЕДЕЛЕНИЕ ПРИЗНАКОВ И ЦЕЛЕВОЙ ПЕРЕМЕННОЙ
-# X = df.drop(['Survived'], axis=1)
-# y = df['Survived']
 
-# # РАЗДЕЛЕНИЕ ДАННЫХ
-# X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+# --- Подготовка данных для моделей ---
+features = ['Pclass', 'Sex', 'Age', 'SibSp', 'Parch', 'Fare', 'Embarked', 'FamilySize', 'IsAlone', 'Title']
+X = df[features]
+y = df['Survived']
 
-# # КОДИРОВАНИЕ КАТЕГОРИАЛЬНЫХ ПРИЗНАКОВ
-# categorical_cols = ['Pclass', 'Sex', 'Embarked']
-# encoder = ce.TargetEncoder(cols=categorical_cols)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42, stratify=y)
 
-# X_train_encoded = encoder.fit_transform(X_train, y_train)
-# X_test_encoded = encoder.transform(X_test)
+encoder = ce.TargetEncoder(cols=['Sex', 'Embarked', 'Title', 'IsAlone'])
+X_train_encoded = encoder.fit_transform(X_train, y_train)
+X_test_encoded = encoder.transform(X_test)
 
-# # Использование RandomForestClassifier, как было указано в задании
-# model = RandomForestClassifier(n_estimators=100, random_state=42)
 
-# # ОБУЧЕНИЕ МОДЕЛИ
-# model.fit(X_train_encoded, y_train)
+# --- ВКЛАДКА 2: ОБУЧЕНИЕ И НАСТРОЙКА МОДЕЛЕЙ ---
+with tab2:
+    st.header("Выбор и настройка модели машинного обучения")
+    model_choice = st.selectbox(
+        "Выберите модель для обучения:",
+        ("Decision Tree", "K-Nearest Neighbors", "Logistic Regression", "Random Forest")
+    )
 
-# # ПРЕДСКАЗАНИЯ И ОЦЕНКА ТОЧНОСТИ
-# acc_train = accuracy_score(y_train, model.predict(X_train_encoded))
-# acc_test = accuracy_score(y_test, model.predict(X_test_encoded))      
-    
-# results = pd.DataFrame([{
-#     'Model': 'RandomForestClassifier',
-#     'Train Accuracy': round(acc_train, 2),
-#     'Test Accuracy': round(acc_test, 2)
-# }])
+    params = {}
+    if model_choice == "Decision Tree":
+        params['max_depth'] = st.slider("Максимальная глубина дерева (max_depth)", 2, 20, 5, 1)
+        params['min_samples_leaf'] = st.slider("Мин. число объектов в листе (min_samples_leaf)", 1, 50, 5, 1)
+        model = DecisionTreeClassifier(random_state=42, **params)
+    elif model_choice == "K-Nearest Neighbors":
+        params['n_neighbors'] = st.slider("Число соседей (n_neighbors)", 1, 20, 5, 1)
+        model = KNeighborsClassifier(**params)
+    elif model_choice == "Logistic Regression":
+        params['C'] = st.slider("Сила регуляризации (C)", 0.01, 10.0, 1.0, 0.01)
+        model = LogisticRegression(random_state=42, max_iter=1000, **params)
+    elif model_choice == "Random Forest":
+        params['n_estimators'] = st.slider("Количество деревьев (n_estimators)", 50, 500, 100, 10)
+        params['max_depth'] = st.slider("Максимальная глубина дерева (max_depth)", 2, 20, 7, 1)
+        model = RandomForestClassifier(random_state=42, **params)
 
-# st.write("### 📊 Сравнение моделей по точности")
-# st.table(results)
+    if st.button("🚀 Обучить и оценить модель", use_container_width=True):
+        # Обучение
+        model.fit(X_train_encoded, y_train)
+        y_pred_train = model.predict(X_train_encoded)
+        y_pred_test = model.predict(X_test_encoded)
+        acc_train = accuracy_score(y_train, y_pred_train)
+        acc_test = accuracy_score(y_test, y_pred_test)
+
+        st.write("### Результаты оценки:")
+        col1, col2 = st.columns(2)
+        col1.metric("Точность на обучающей выборке", f"{acc_train:.2%}")
+        col2.metric("Точность на тестовой выборке", f"{acc_test:.2%}")
+
+        # Матрица ошибок
+        cm = confusion_matrix(y_test, y_pred_test)
+        fig_cm = px.imshow(cm, text_auto=True, aspect="auto",
+                           labels=dict(x="Предсказанный класс", y="Истинный класс", color="Количество"),
+                           x=['Не выжил', 'Выжил'], y=['Не выжил', 'Выжил'],
+                           color_continuous_scale='Blues',
+                           title="Матрица ошибок")
+        st.plotly_chart(fig_cm, use_container_width=True)
+
+        # Сохраняем модель в сессии для использования на другой вкладке
+        st.session_state['model'] = model
+        st.success("Модель успешно обучена и готова для прогнозирования!")
+
+
+# --- ВКЛАДКА 3: СДЕЛАТЬ ПРОГНОЗ ---
+with tab3:
+    st.header("Прогноз выживаемости пассажира")
+    if 'model' not in st.session_state:
+        st.warning("Сначала обучите модель на вкладке 'Обучение и настройка моделей'!")
+    else:
+        st.info("Введите параметры пассажира, чтобы получить прогноз.")
+        col1, col2 = st.columns(2)
+        with col1:
+            pclass_input = st.selectbox("Класс билета", sorted(df['Pclass'].unique()), key='pclass')
+            sex_input = st.selectbox("Пол", df['Sex'].unique(), key='sex')
+            age_input = st.slider("Возраст", 0, 100, 30, key='age')
+            fare_input = st.slider("Стоимость билета", 0.0, float(df['Fare'].max()), 32.0, key='fare')
+
+        with col2:
+            sibsp_input = st.number_input("Кол-во братьев/сестер/супругов", min_value=0, max_value=10, value=0, key='sibsp')
+            parch_input = st.number_input("Кол-во родителей/детей", min_value=0, max_value=10, value=0, key='parch')
+            embarked_input = st.selectbox("Порт посадки", df['Embarked'].unique(), key='embarked')
+            title_input = st.selectbox("Титул", df['Title'].unique(), key='title')
+
+
+        if st.button("Получить прогноз", use_container_width=True, type="primary"):
+            family_size = sibsp_input + parch_input + 1
+            is_alone = (family_size == 1)
+
+            user_input = pd.DataFrame([{
+                'Pclass': pclass_input,
+                'Sex': sex_input,
+                'Age': age_input,
+                'SibSp': sibsp_input,
+                'Parch': parch_input,
+                'Fare': fare_input,
+                'Embarked': embarked_input,
+                'FamilySize': family_size,
+                'IsAlone': is_alone,
+                'Title': title_input
+            }])
+
+            # Кодируем пользовательский ввод
+            user_encoded = encoder.transform(user_input)
+            user_encoded = user_encoded[X_train_encoded.columns]
+
+            # Делаем предсказание
+            model = st.session_state['model']
+            prediction = model.predict(user_encoded)[0]
+            probability = model.predict_proba(user_encoded)[0]
+
+            # Отображаем результат
+            result_col1, result_col2 = st.columns([1, 2])
+            with result_col1:
+                if prediction == 1:
+                    st.metric(label="Прогноз", value="Выжил", delta="Высокие шансы")
+                    st.image("https://em-content.zobj.net/source/microsoft-teams/363/lifebuoy_1f6df.png", width=150)
+                else:
+                    st.metric(label="Прогноз", value="Не выжил", delta="Низкие шансы", delta_color="inverse")
+                    st.image("https://em-content.zobj.net/source/microsoft-teams/363/skull-and-crossbones_2620-fe0f.png", width=150)
+
+            with result_col2:
+                # Gauge chart для вероятности
+                fig_gauge = go.Figure(go.Indicator(
+                    mode = "gauge+number",
+                    value = probability[1] * 100,
+                    title = {'text': "Вероятность выжить (%)"},
+                    gauge = {'axis': {'range': [None, 100]},
+                             'bar': {'color': "#636EFA"},
+                             'steps' : [
+                                 {'range': [0, 50], 'color': "#F0F2F6"},
+                                 {'range': [50, 100], 'color': "#D6EAF8"}],
+                            }))
+                st.plotly_chart(fig_gauge, use_container_width=True)
